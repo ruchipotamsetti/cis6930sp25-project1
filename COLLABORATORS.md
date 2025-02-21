@@ -1,0 +1,1 @@
+GeeksForGeeks | https://www.geeksforgeeks.org/converting-string-yyyy-mm-dd-into-datetime-in-python/ | hepled me understand how to parse string date
