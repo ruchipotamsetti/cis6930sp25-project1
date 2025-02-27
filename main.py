@@ -42,7 +42,7 @@ def parse_date(date):
 
 # Fetch data from API only if missing in DuckDB
 def fetch_and_store(api_id, table_name, date_field, year, month, day):
-    client = Socrata("data.cityofgainesville.org", None)
+    client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
 
     # Check if data already exists for the given date
     existing = db_conn.execute(f"""
