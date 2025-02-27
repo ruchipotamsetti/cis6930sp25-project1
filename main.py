@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS traffic_crashes (
     case_number VARCHAR,
     accident_date TIMESTAMP,
     totalpeopleinvolved INTEGER,
-    longitude DOUBLE,
-    latitude DOUBLE
+    latitude DOUBLE,
+    longitude DOUBLE
 )
 """)
 
@@ -129,7 +129,7 @@ def findHighestTotalPeople(crashes):
 
 # Compare distance to find related incidents
 def compareDistance(x, data):
-    return [record for record in data if geodesic(x, (record[4], record[3])).km < 1]
+    return [record for record in data if geodesic(x, (record[3], record[4])).km < 1]
 
 # Count cases and people involved
 def update_case_counts(records, case_counts):
