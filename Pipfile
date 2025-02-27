@@ -10,6 +10,7 @@ requests = "*"
 argparse = "*"
 geopy = "*"
 duckdb = "*"
+pytest = "*"
 
 [dev-packages]
 
