@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime
 from geopy.distance import geodesic
 from sodapy import Socrata
+import json
 
 # Initialize DuckDB connection
 db_conn = duckdb.connect("incidents.duckdb")
@@ -132,6 +133,8 @@ def compareDistance(x, data):
 
 # Count cases and people involved
 def update_case_counts(records, case_counts):
+    # print("----------------------------------------")
+    # print("RECORDS: ", records)
     for record in records:
         case_number = record[0]  # case_number is the first column in each table
         people_involved = record[2] if len(record) > 2 else 1  # Default to 1 if missing
@@ -170,11 +173,17 @@ if __name__ == "__main__":
     filtered_crimes_loc = compareDistance(x, crimes)
     filtered_crashes_loc = compareDistance(x, crashes)
 
+    # Create a set of case numbers from filtered crimes and crashes
+    filtered_case_numbers = set(crime[0] for crime in filtered_crimes_loc) | set(crash[0] for crash in filtered_crashes_loc)
+
+    # Filter arrests based on the case numbers
+    filtered_arrests = [arrest for arrest in arrests if arrest[0] in filtered_case_numbers]
+
     # Count cases
     case_counts = {}
     case_counts = update_case_counts(filtered_crimes_loc, case_counts)
     case_counts = update_case_counts(filtered_crashes_loc, case_counts)
-    case_counts = update_case_counts(arrests, case_counts)
+    case_counts = update_case_counts(filtered_arrests, case_counts)
 
     # Sort and print results
     sorted_items = sorted(case_counts.items(), key=lambda x: x[1], reverse=True)
