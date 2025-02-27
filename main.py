@@ -53,7 +53,7 @@ def fetch_and_store(api_id, table_name, date_field, year, month, day):
     """, (year, month, day)).fetchone()[0]
 
     if existing > 0:
-        print(f"Data for {table_name} already exists. Skipping API fetch.")
+        # print(f"Data for {table_name} already exists. Skipping API fetch.")
         return
 
     # Fetch from API
@@ -86,7 +86,7 @@ def fetch_and_store(api_id, table_name, date_field, year, month, day):
                 (r.get("case_number"), r.get(date_field), int(r.get("totalpeopleinvolved", 1)))
                 for r in filtered_data
             ])
-            print(f"Stored {len(filtered_data)} records in {table_name}.")
+            # print(f"Stored {len(filtered_data)} records in {table_name}.")
         else:
             db_conn.executemany(f"""
                 INSERT INTO {table_name} VALUES (?, ?, ?, ?, ?)
@@ -94,9 +94,7 @@ def fetch_and_store(api_id, table_name, date_field, year, month, day):
                 ((r.get("case_number") or r.get("id")), r.get(date_field), int(r.get("totalpeopleinvolved", 1)), float(r.get("longitude", 0)), float(r.get("latitude", 0)))
                 for r in filtered_data
             ])
-            print(f"Stored {len(filtered_data)} records in {table_name}.")
-    else:
-        print(f"No data found for {table_name} on {year}-{month}-{day}.")
+            # print(f"Stored {len(filtered_data)} records in {table_name}.")
 
 # Query incidents from DuckDB
 def get_incidents(year, month, day):
@@ -159,7 +157,7 @@ if __name__ == "__main__":
     crashes, crimes, arrests = get_incidents(args.year, args.month, args.day)
 
     if not crashes:
-        print("No traffic crashes found.")
+        # print("No traffic crashes found.")
         exit()
 
     # Find highest total people involved
