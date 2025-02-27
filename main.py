@@ -137,6 +137,8 @@ if __name__ == "__main__":
     traffic_crashes = getTrafficCrashes(args.year, args.month, args.day)
     # # print(json.dumps(traffic_crashes, indent=4))
     # print("Length traffic crashes: ", len(traffic_crashes))
+    if len(traffic_crashes)==0:
+        exit
 
     crime_records = getCrimeRecords(args.year, args.month, args.day)
     # print(json.dumps(crime_records, indent=4))
