@@ -178,21 +178,16 @@ def ensure_total_people_and_sort(data):
         if "totalpeopleinvolved" not in record:
             record["totalpeopleinvolved"] = 1  # Default value if missing
     
-    # Function to extract the correct date and convert it into a sortable format
-    def extract_date(record):
-        date_str = record.get("report_date") or record.get("accident_date")
-        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f") if date_str else datetime.min
-
     # Sorting:
     # - Descending by totalpeopleinvolved (-int(record["totalpeopleinvolved"]))
-    # - Descending by date (later dates first, so negate timestamp)
-    data.sort(key=lambda record: (-int(record["totalpeopleinvolved"]), -extract_date(record).timestamp()))
+    # - Descending by case number (reverse lexicographical order)
+    data.sort(key=lambda record: (-int(record["totalpeopleinvolved"]), -int(record.get("case_number") or record.get("id"))), reverse=False)
 
     # Printing in the required format
     for record in data:
-        date = record.get("report_date") or record.get("accident_date")
         case_number = record.get("case_number") or record.get("id")
         print(f"{record['totalpeopleinvolved']}\t{case_number}")
+    return data
 
 def join_and_deduplicate(traffic_crashes, data):
     existing_casenumbers = {crash.get("case_number") for crash in traffic_crashes}
@@ -226,15 +221,13 @@ if __name__ == "__main__":
     x = (latitude, longitude)
     
     filtered_crimes_loc = compareDistance(x, crime_responses)
-    # print("LENGTH CRIMES: ", len(filtered_crimes_loc))
-    # print("CRIMES: ", json.dumps(filtered_crimes_loc, indent=4))
     
     filtered_crashes_loc = compareDistance(x, traffic_crashes)
 
     # total_records = filtered_crashes_loc + filtered_crimes_loc
     all_records = join_and_deduplicate(filtered_crashes_loc, filtered_crimes_loc)
 
-    ensure_total_people_and_sort(all_records)
+    sorted = ensure_total_people_and_sort(all_records)
 
 
     
