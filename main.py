@@ -105,6 +105,7 @@ def create_case_people_dict(traffic_crashes, data):
             case_number = record['id'] 
         else:
             case_number = record['case_number']
+        # print("CASE NUMBER: ", case_number)
         
          # Check if totalpeopleinvolved exists in the record
         if "totalpeopleinvolved" in record and record["totalpeopleinvolved"] is not None:
@@ -162,12 +163,17 @@ if __name__ == "__main__":
 
     # print("CRIME RECORDS:")
     filtered_crimes_loc = compareDistance(x, crime_responses)
+    
+    for record in traffic_crashes:
+        if record['case_number'] == highest_cases[0]['case_number']:
+            traffic_crashes.remove(record)
+            break
 
     # print("TRAFFIC CRASHES:")
     filtered_crashes_loc = compareDistance(x, traffic_crashes)
 
     total_records = filtered_crashes_loc + filtered_crimes_loc
-
+    # print("filtered_crimes_loc: ", filtered_crimes_loc)
     case_counts = create_case_people_dict(traffic_crashes, total_records)
 
     sorted_items = sorted(case_counts.items(), key=lambda x: x[1], reverse=True)
