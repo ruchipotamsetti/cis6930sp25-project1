@@ -6,6 +6,7 @@ import argparse
 from datetime import datetime
 from geopy.distance import geodesic
 from collections import Counter
+import sys
 
 def parse_date(date):
     dt = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
@@ -145,8 +146,8 @@ if __name__ == "__main__":
 
     # print("TRAFFIC CRASHES: ")
     traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
-    if len(traffic_crashes)==0:
-        exit
+    if not traffic_crashes:
+        sys.exit()
     # print("CRIME RESPONSES: ")
     crime_responses = getData("gvua-xt9q", "offense_date", args.year, args.month, args.day)
     # print("ARRESTS: ")
