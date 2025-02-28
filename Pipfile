@@ -4,13 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pandas = "*"
 sodapy = "*"
-requests = "*"
 argparse = "*"
 geopy = "*"
-duckdb = "*"
 pytest = "*"
+pytest-mock = "*"
 
 [dev-packages]
 

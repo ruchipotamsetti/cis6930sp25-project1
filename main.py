@@ -1,19 +1,9 @@
-import pandas as pd
 from sodapy import Socrata
-import requests
 import json
 import argparse
 from datetime import datetime
 from geopy.distance import geodesic
-from collections import Counter
 import sys
-
-def parse_date(date):
-    dt = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
-    return dt.year, dt.month, dt.day
-
-def filter_by_date(records, key, year, month, day):
-    return [record for record in records if parse_date(record[key]) == (year, month, day)]
 
 def getData(api, date_key, year, month, day): 
     client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
@@ -29,57 +19,11 @@ def getData(api, date_key, year, month, day):
     results = client.get(
         api,
         where=f"{date_key} >= '{date_str}' AND {date_key} < '{year}-{month}-{int(day) + 1}T00:00:00.000'",
-        limit=50000  # Fetch up to 10 records
+        limit=50000 
     )
-    
-    # print("----------------------------------")
-    # print(len(results))
-    # print("----------------------------------")
     
     return results  # Return the results if needed
 
-def getTrafficCrashes():
-    client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
-    limit = 10000
-    offset = 0
-    traffic_crashes = []
-    while True:
-       results = client.get("iecn-3sxx", limit=limit, offset=offset)
-       if not results:
-           break
-       traffic_crashes += results
-       offset += limit
-    # traffic_crashes = filter_by_date(traffic_crashes, "accident_date", year, month, day)
-    return traffic_crashes
-
-def getCrimeRecords(year, month, day):
-    client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
-    limit = 10000
-    offset = 0
-    crime_records = []
-    while True:
-        res = client.get("gvua-xt9q", limit=limit, offset=offset)
-        if not res:
-            break
-        crime_records += res
-        offset += limit
-    crime_records = filter_by_date(crime_records, "offense_date", year, month, day)
-    return crime_records
-
-
-def getArrests(year, month, day):
-    client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
-    limit = 10000
-    offset = 0
-    arrests = []
-    while True:
-        res = client.get("aum6-79zv", limit=limit, offset=offset)
-        if not res:
-            break
-        arrests += res
-        offset += limit
-    arrests = filter_by_date(arrests, "arrest_date", year, month, day)
-    return arrests
     
 def findHighestTotalPeople(data):
     max_people = max(int(entry["totalpeopleinvolved"]) for entry in data)
@@ -98,89 +42,11 @@ def compareDistance(x, data):
             filtered_crimes.append(record)
     return filtered_crimes
 
-def update_case_counts(records, case_counts):
-    for record in records:
-        case_number = record.get("case_number") or record.get("id")
-        people_involved = record.get("totalpeopleinvolved", 1)  # Default to 1 if not present
-
-        if case_number:
-            case_counts[case_number] = case_counts.get(case_number, 0) + int(people_involved)
-
-    return case_counts
-
-def create_case_people_dict(traffic_crashes, data):
-    case_people_dict = {}
-
-    # Convert traffic_crashes into a dictionary for quick lookup
-    crash_dict = {crash['case_number']: crash['totalpeopleinvolved'] for crash in traffic_crashes}  # case_number -> totalpeopleinvolved
-
-    for record in data:
-        if "id" in record:
-            case_number = record['id'] 
-        else:
-            case_number = record['case_number']
-        # print("CASE NUMBER: ", case_number)
-        
-         # Check if totalpeopleinvolved exists in the record
-        if "totalpeopleinvolved" in record and record["totalpeopleinvolved"] is not None:
-            total_people = record["totalpeopleinvolved"]
-            case_people_dict[case_number] = int(total_people)
-        else:
-            case_people_dict[case_number] = 1
-        # elif case_number in crash_dict:
-        #     case_people_dict[case_number] = int(crash_dict[case_number])
-        # If neither condition is met, we don't add the case_number to the dictionary
-
-    # print(case_people_dict)
-    return case_people_dict
-
-def add_location_to_arrests(traffic_crashes, arrests):
-    # Create a dictionary from traffic_crashes for quick lookup
-    crash_locations = {}
-    for crash in traffic_crashes:
-        case_number = crash.get('case_number')
-        lat = crash.get('latitude') 
-        lon = crash.get('longitude') 
-        if case_number and lat is not None and lon is not None:
-            crash_locations[case_number] = (lat, lon)
-    
-    # Filter and update arrests with location data where possible
-    matched_arrests = []
-    for arrest in arrests:
-        case_number = arrest.get('case_number')
-        if case_number in crash_locations:
-            # print("CASE NUMBER: ", case_number)
-            arrest['latitude'], arrest['longitude'] = crash_locations[case_number]
-            matched_arrests.append(arrest)
-    return matched_arrests
-
-# def ensure_total_people_and_sort(data):
-#     for record in data:
-#         if "totalpeopleinvolved" not in record:
-#             record["totalpeopleinvolved"] = 1  # Default value if missing
-    
-#     # Function to extract the correct date and convert it into a sortable format
-#     def extract_date(record):
-#         date_str = record.get("offense_date") or record.get("accident_date")
-#         return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f") if date_str else datetime.min
-
-#     # Sorting: First by totalpeopleinvolved, then by extracted date
-#     # data.sort(key=lambda record: (int(record["totalpeopleinvolved"]), extract_date(record)))
-#     data.sort(key=lambda record: (-int(record["totalpeopleinvolved"]), -extract_date(record)))
-
-#     # Printing in the required format
-#     for record in data:
-#         case_number = record.get("case_number") or record.get("id")
-#         print(f"{record['totalpeopleinvolved']}\t{case_number}")
-
 def ensure_total_people_and_sort(data):
     for record in data:
         if "totalpeopleinvolved" not in record:
             record["totalpeopleinvolved"] = 1  # Default value if missing
-    
-    # Sorting:
-    # - Descending by totalpeopleinvolved (-int(record["totalpeopleinvolved"]))
-    # - Descending by case number (reverse lexicographical order)
+
     data.sort(key=lambda record: (-int(record["totalpeopleinvolved"]), -int(record.get("case_number") or record.get("id"))), reverse=False)
 
     # Printing in the required format
@@ -209,8 +75,8 @@ if __name__ == "__main__":
 
 
     traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
-    if not traffic_crashes:
-        sys.exit()
+    # if not traffic_crashes:
+    #     sys.exit()
     
     crime_responses = getData("gvua-xt9q", "report_date", args.year, args.month, args.day)
    
@@ -221,13 +87,11 @@ if __name__ == "__main__":
     x = (latitude, longitude)
     
     filtered_crimes_loc = compareDistance(x, crime_responses)
-    
     filtered_crashes_loc = compareDistance(x, traffic_crashes)
 
-    # total_records = filtered_crashes_loc + filtered_crimes_loc
     all_records = join_and_deduplicate(filtered_crashes_loc, filtered_crimes_loc)
 
-    sorted = ensure_total_people_and_sort(all_records)
+    ensure_total_people_and_sort(all_records)
 
 
     
