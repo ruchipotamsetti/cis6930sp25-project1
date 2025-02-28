@@ -172,7 +172,9 @@ if __name__ == "__main__":
     # print("TRAFFIC CRASHES:")
     filtered_crashes_loc = compareDistance(x, traffic_crashes)
 
-    total_records = filtered_crashes_loc + filtered_crimes_loc
+    # total_records = filtered_crashes_loc + filtered_crimes_loc
+    total_records = filtered_crashes_loc 
+    # print("total_records: ", len(total_records))
     # print("filtered_crimes_loc: ", filtered_crimes_loc)
     case_counts = create_case_people_dict(traffic_crashes, total_records)
 
