@@ -80,7 +80,7 @@ def compareDistance(x, data):
         coordinates = (lat, long)
         case_number = record.get("case_number") or record.get("id")
         # print("DISTANCE: ", case_number," ", geodesic(x, coordinates).km)
-        if geodesic(x, coordinates).km <=1:
+        if geodesic(x, coordinates).km <1:
             filtered_crimes.append(record)
     return filtered_crimes
 
@@ -163,11 +163,6 @@ if __name__ == "__main__":
 
     # print("CRIME RECORDS:")
     filtered_crimes_loc = compareDistance(x, crime_responses)
-    
-    for record in traffic_crashes:
-        if record['case_number'] == highest_cases[0]['case_number']:
-            traffic_crashes.remove(record)
-            break
 
     # print("TRAFFIC CRASHES:")
     filtered_crashes_loc = compareDistance(x, traffic_crashes)
