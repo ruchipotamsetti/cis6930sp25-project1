@@ -29,7 +29,7 @@ def getData(api, date_key, year, month, day):
     results = client.get(
         api,
         where=f"{date_key} >= '{date_str}' AND {date_key} < '{year}-{month}-{int(day) + 1}T00:00:00.000'",
-        limit=10  # Fetch up to 10 records
+        limit=50000  # Fetch up to 10 records
     )
     
     # print("----------------------------------")
@@ -163,12 +163,12 @@ if __name__ == "__main__":
 
     # print("TRAFFIC CRASHES: ")
 
-    traffic_crashes = getTrafficCrashes()
+    # traffic_crashes = getTrafficCrashes()
     # print("LENGTH BEFORE: ", len(traffic_crashes))
-    traffic_crashes = filter_by_date(traffic_crashes, "accident_date", args.year, args.month, args.day)
+    # traffic_crashes = filter_by_date(traffic_crashes, "accident_date", args.year, args.month, args.day)
     # print("LENGTH AFTER: ", len(traffic_crashes))
     # print("TRAFFIC: ", json.dumps(traffic_crashes, indent=4))
-    # traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
+    traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
     if not traffic_crashes:
         sys.exit()
     # print("CRIME RESPONSES: ")
