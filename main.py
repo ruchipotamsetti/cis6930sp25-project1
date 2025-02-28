@@ -14,19 +14,28 @@ def parse_date(date):
 def filter_by_date(records, key, year, month, day):
     return [record for record in records if parse_date(record[key]) == (year, month, day)]
 
-def getTrafficCrashes():
+def getData(api, date_key, year, month, day): 
     client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
-    limit = 10000
-    offset = 0
-    traffic_crashes = []
-    while True:
-       results = client.get("iecn-3sxx", limit=limit, offset=offset)
-       if not results:
-           break
-       traffic_crashes += results
-       offset += limit
-    # traffic_crashes = filter_by_date(traffic_crashes, "accident_date", year, month, day)
-    return traffic_crashes
+    
+    # Ensure month and day are two-digit formatted
+    month = str(month).zfill(2)
+    day = str(day).zfill(2)
+    
+    # Construct date string in the required format (YYYY-MM-DD)
+    date_str = f"{year}-{month}-{day}T00:00:00.000"
+    
+    # Query data using SoQL
+    results = client.get(
+        api,
+        where=f"{date_key} >= '{date_str}' AND {date_key} < '{year}-{month}-{int(day) + 1}T00:00:00.000'",
+        limit=10  # Fetch up to 10 records
+    )
+    
+    # print("----------------------------------")
+    # print(len(results))
+    # print("----------------------------------")
+    
+    return results  # Return the results if needed
 
 def getCrimeRecords(year, month, day):
     client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
@@ -134,51 +143,32 @@ if __name__ == "__main__":
     parser.add_argument("--day", type=int)
     args = parser.parse_args()
 
+    # print("TRAFFIC CRASHES: ")
+    traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
+    # print("CRIME RESPONSES: ")
+    crime_responses = getData("gvua-xt9q", "offense_date", args.year, args.month, args.day)
+    # print("ARRESTS: ")
+    arrests = getData("aum6-79zv", "arrest_date", args.year, args.month, args.day)
 
-    traffic_crashes = getTrafficCrashes()
-    filtered_traffic_crashes = filter_by_date(traffic_crashes, "accident_date", args.year, args.month, args.day)
-    if len(traffic_crashes)==0:
-        exit
+    highest_cases = findHighestTotalPeople(traffic_crashes)
+    # print("HIGHEST: ", json.dumps(highest_cases, indent=4))
 
-    crime_records = getCrimeRecords(args.year, args.month, args.day)
-
-    arrests = getArrests(args.year, args.month, args.day)
-
-    updated_arrests = add_location_to_arrests(traffic_crashes, arrests)
-    # print("UPDATE ARRESTS: ", json.dumps(updated_arrests, indent=4))
-
-    # print("traffic_crashes: ", json.dumps(traffic_crashes, indent=4))
-    # print("crime_records: ", json.dumps(crime_records, indent=4))
-    # print("arrests: ", json.dumps(arrests, indent=4))
-
-    highest_cases = findHighestTotalPeople(filtered_traffic_crashes)
-    # print("highest cases: ", json.dumps(highest_cases, indent=4))
-    # print("HIGHEST: ", highest_cases[0]['case_number'], " People involved: ", highest_cases[0]['totalpeopleinvolved'])
     longitude = highest_cases[0]['longitude']
     latitude = highest_cases[0]['latitude']
     x = (latitude, longitude)
 
     # print("CRIME RECORDS:")
-    filtered_crimes_loc = compareDistance(x, crime_records)
+    filtered_crimes_loc = compareDistance(x, crime_responses)
 
     # print("TRAFFIC CRASHES:")
-    filtered_crashes_loc = compareDistance(x, filtered_traffic_crashes)
+    filtered_crashes_loc = compareDistance(x, traffic_crashes)
 
-    # print("ARRESTS:")
-    filtered_arrests_loc = compareDistance(x, updated_arrests)
-
-    total_records = filtered_crashes_loc + filtered_crimes_loc + filtered_arrests_loc
-
-    # case_counts = {}
-    # case_counts = update_case_counts(filtered_crimes_loc, case_counts)
-    # case_counts = update_case_counts(filtered_crashes_loc, case_counts)
-    # case_counts = update_case_counts(arrests, case_counts)
+    total_records = filtered_crashes_loc + filtered_crimes_loc
 
     case_counts = create_case_people_dict(traffic_crashes, total_records)
-
-    # print(case_counts)
-
 
     sorted_items = sorted(case_counts.items(), key=lambda x: x[1], reverse=True)
     for case_number, people_count in sorted_items:
         print(f"{people_count}\t{case_number}")
+
+    
