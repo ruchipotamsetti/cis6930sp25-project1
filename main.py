@@ -14,7 +14,7 @@ def parse_date(date):
 def filter_by_date(records, key, year, month, day):
     return [record for record in records if parse_date(record[key]) == (year, month, day)]
 
-def getTrafficCrashes(year, month, day):
+def getTrafficCrashes():
     client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
     limit = 10000
     offset = 0
@@ -25,7 +25,7 @@ def getTrafficCrashes(year, month, day):
            break
        traffic_crashes += results
        offset += limit
-    traffic_crashes = filter_by_date(traffic_crashes, "accident_date", year, month, day)
+    # traffic_crashes = filter_by_date(traffic_crashes, "accident_date", year, month, day)
     return traffic_crashes
 
 def getCrimeRecords(year, month, day):
@@ -70,7 +70,7 @@ def compareDistance(x, data):
         coordinates = (lat, long)
         case_number = record.get("case_number") or record.get("id")
         # print("DISTANCE: ", case_number," ", geodesic(x, coordinates).km)
-        if geodesic(x, coordinates).km <1:
+        if geodesic(x, coordinates).km <=1:
             filtered_crimes.append(record)
     return filtered_crimes
 
@@ -107,7 +107,25 @@ def create_case_people_dict(traffic_crashes, data):
     # print(case_people_dict)
     return case_people_dict
 
-
+def add_location_to_arrests(traffic_crashes, arrests):
+    # Create a dictionary from traffic_crashes for quick lookup
+    crash_locations = {}
+    for crash in traffic_crashes:
+        case_number = crash.get('case_number')
+        lat = crash.get('latitude') 
+        lon = crash.get('longitude') 
+        if case_number and lat is not None and lon is not None:
+            crash_locations[case_number] = (lat, lon)
+    
+    # Filter and update arrests with location data where possible
+    matched_arrests = []
+    for arrest in arrests:
+        case_number = arrest.get('case_number')
+        if case_number in crash_locations:
+            # print("CASE NUMBER: ", case_number)
+            arrest['latitude'], arrest['longitude'] = crash_locations[case_number]
+            matched_arrests.append(arrest)
+    return matched_arrests
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -116,7 +134,9 @@ if __name__ == "__main__":
     parser.add_argument("--day", type=int)
     args = parser.parse_args()
 
-    traffic_crashes = getTrafficCrashes(args.year, args.month, args.day)
+
+    traffic_crashes = getTrafficCrashes()
+    filtered_traffic_crashes = filter_by_date(traffic_crashes, "accident_date", args.year, args.month, args.day)
     if len(traffic_crashes)==0:
         exit
 
@@ -124,7 +144,15 @@ if __name__ == "__main__":
 
     arrests = getArrests(args.year, args.month, args.day)
 
-    highest_cases = findHighestTotalPeople(traffic_crashes)
+    updated_arrests = add_location_to_arrests(traffic_crashes, arrests)
+    # print("UPDATE ARRESTS: ", json.dumps(updated_arrests, indent=4))
+
+    # print("traffic_crashes: ", json.dumps(traffic_crashes, indent=4))
+    # print("crime_records: ", json.dumps(crime_records, indent=4))
+    # print("arrests: ", json.dumps(arrests, indent=4))
+
+    highest_cases = findHighestTotalPeople(filtered_traffic_crashes)
+    # print("highest cases: ", json.dumps(highest_cases, indent=4))
     # print("HIGHEST: ", highest_cases[0]['case_number'], " People involved: ", highest_cases[0]['totalpeopleinvolved'])
     longitude = highest_cases[0]['longitude']
     latitude = highest_cases[0]['latitude']
@@ -134,9 +162,12 @@ if __name__ == "__main__":
     filtered_crimes_loc = compareDistance(x, crime_records)
 
     # print("TRAFFIC CRASHES:")
-    filtered_crashes_loc = compareDistance(x, traffic_crashes)
+    filtered_crashes_loc = compareDistance(x, filtered_traffic_crashes)
 
-    total_records = filtered_crashes_loc + filtered_crimes_loc
+    # print("ARRESTS:")
+    filtered_arrests_loc = compareDistance(x, updated_arrests)
+
+    total_records = filtered_crashes_loc + filtered_crimes_loc + filtered_arrests_loc
 
     # case_counts = {}
     # case_counts = update_case_counts(filtered_crimes_loc, case_counts)
