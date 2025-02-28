@@ -154,6 +154,57 @@ def add_location_to_arrests(traffic_crashes, arrests):
             matched_arrests.append(arrest)
     return matched_arrests
 
+# def ensure_total_people_and_sort(data):
+#     for record in data:
+#         if "totalpeopleinvolved" not in record:
+#             record["totalpeopleinvolved"] = 1  # Default value if missing
+    
+#     # Function to extract the correct date and convert it into a sortable format
+#     def extract_date(record):
+#         date_str = record.get("offense_date") or record.get("accident_date")
+#         return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f") if date_str else datetime.min
+
+#     # Sorting: First by totalpeopleinvolved, then by extracted date
+#     # data.sort(key=lambda record: (int(record["totalpeopleinvolved"]), extract_date(record)))
+#     data.sort(key=lambda record: (-int(record["totalpeopleinvolved"]), -extract_date(record)))
+
+#     # Printing in the required format
+#     for record in data:
+#         case_number = record.get("case_number") or record.get("id")
+#         print(f"{record['totalpeopleinvolved']}\t{case_number}")
+
+def ensure_total_people_and_sort(data):
+    for record in data:
+        if "totalpeopleinvolved" not in record:
+            record["totalpeopleinvolved"] = 1  # Default value if missing
+    
+    # Function to extract the correct date and convert it into a sortable format
+    def extract_date(record):
+        date_str = record.get("report_date") or record.get("accident_date")
+        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f") if date_str else datetime.min
+
+    # Sorting:
+    # - Descending by totalpeopleinvolved (-int(record["totalpeopleinvolved"]))
+    # - Descending by date (later dates first, so negate timestamp)
+    data.sort(key=lambda record: (-int(record["totalpeopleinvolved"]), -extract_date(record).timestamp()))
+
+    # Printing in the required format
+    for record in data:
+        date = record.get("report_date") or record.get("accident_date")
+        case_number = record.get("case_number") or record.get("id")
+        print(f"{record['totalpeopleinvolved']}\t{case_number}")
+
+def join_and_deduplicate(traffic_crashes, data):
+    existing_casenumbers = {crash.get("case_number") for crash in traffic_crashes}
+    new_traffic_crashes = traffic_crashes[:]
+    for record in data:
+        casenumber = record.get("case_number") or record.get("id")#Use .get() to handle missing 'casenumber' gracefully.
+        if casenumber not in existing_casenumbers and record not in new_traffic_crashes: #Check if already present
+          new_traffic_crashes.append(record)
+          existing_casenumbers.add(casenumber)
+
+    return new_traffic_crashes
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--year", type=int)
@@ -161,45 +212,29 @@ if __name__ == "__main__":
     parser.add_argument("--day", type=int)
     args = parser.parse_args()
 
-    # print("TRAFFIC CRASHES: ")
 
-    # traffic_crashes = getTrafficCrashes()
-    # print("LENGTH BEFORE: ", len(traffic_crashes))
-    # traffic_crashes = filter_by_date(traffic_crashes, "accident_date", args.year, args.month, args.day)
-    # print("LENGTH AFTER: ", len(traffic_crashes))
-    # print("TRAFFIC: ", json.dumps(traffic_crashes, indent=4))
     traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
     if not traffic_crashes:
         sys.exit()
-    # print("CRIME RESPONSES: ")
-    # crime_responses = getData("gvua-xt9q", "offense_date", args.year, args.month, args.day)
-    # print(json.dumps(crime_responses, indent=4))
-    # print("ARRESTS: ")
-    # arrests = getData("aum6-79zv", "arrest_date", args.year, args.month, args.day)
-
+    
+    crime_responses = getData("gvua-xt9q", "report_date", args.year, args.month, args.day)
+   
     highest_cases = findHighestTotalPeople(traffic_crashes)
-    # print("HIGHEST: ", json.dumps(highest_cases, indent=4))
 
     longitude = highest_cases[0]['longitude']
     latitude = highest_cases[0]['latitude']
     x = (latitude, longitude)
-
-    # print("CRIME RECORDS:")
-    # filtered_crimes_loc = compareDistance(x, crime_responses)
-    # print("crimes: ", len(filtered_crimes_loc))
-    # print(json.dumps(filtered_crimes_loc, indent=4))
-
-    # print("TRAFFIC CRASHES:")
+    
+    filtered_crimes_loc = compareDistance(x, crime_responses)
+    # print("LENGTH CRIMES: ", len(filtered_crimes_loc))
+    # print("CRIMES: ", json.dumps(filtered_crimes_loc, indent=4))
+    
     filtered_crashes_loc = compareDistance(x, traffic_crashes)
 
     # total_records = filtered_crashes_loc + filtered_crimes_loc
-    total_records = filtered_crashes_loc 
-    # print("total_records: ", len(total_records))
-    # print("filtered_crimes_loc: ", filtered_crimes_loc)
-    case_counts = create_case_people_dict(traffic_crashes, total_records)
+    all_records = join_and_deduplicate(filtered_crashes_loc, filtered_crimes_loc)
 
-    sorted_items = sorted(case_counts.items(), key=lambda x: x[1], reverse=True)
-    for case_number, people_count in sorted_items:
-        print(f"{people_count}\t{case_number}")
+    ensure_total_people_and_sort(all_records)
+
 
     
