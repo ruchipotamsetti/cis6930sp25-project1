@@ -38,6 +38,20 @@ def getData(api, date_key, year, month, day):
     
     return results  # Return the results if needed
 
+def getTrafficCrashes():
+    client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
+    limit = 10000
+    offset = 0
+    traffic_crashes = []
+    while True:
+       results = client.get("iecn-3sxx", limit=limit, offset=offset)
+       if not results:
+           break
+       traffic_crashes += results
+       offset += limit
+    # traffic_crashes = filter_by_date(traffic_crashes, "accident_date", year, month, day)
+    return traffic_crashes
+
 def getCrimeRecords(year, month, day):
     client = Socrata("data.cityofgainesville.org", "tdAo9J2AL2LD9JFQh7jdIHScm")
     limit = 10000
@@ -148,14 +162,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # print("TRAFFIC CRASHES: ")
-    traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
+
+    traffic_crashes = getTrafficCrashes()
+    # print("LENGTH BEFORE: ", len(traffic_crashes))
+    traffic_crashes = filter_by_date(traffic_crashes, "accident_date", args.year, args.month, args.day)
+    # print("LENGTH AFTER: ", len(traffic_crashes))
+    # print("TRAFFIC: ", json.dumps(traffic_crashes, indent=4))
+    # traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
     if not traffic_crashes:
         sys.exit()
     # print("CRIME RESPONSES: ")
-    crime_responses = getData("gvua-xt9q", "offense_date", args.year, args.month, args.day)
+    # crime_responses = getData("gvua-xt9q", "offense_date", args.year, args.month, args.day)
     # print(json.dumps(crime_responses, indent=4))
     # print("ARRESTS: ")
-    arrests = getData("aum6-79zv", "arrest_date", args.year, args.month, args.day)
+    # arrests = getData("aum6-79zv", "arrest_date", args.year, args.month, args.day)
 
     highest_cases = findHighestTotalPeople(traffic_crashes)
     # print("HIGHEST: ", json.dumps(highest_cases, indent=4))
@@ -165,7 +185,7 @@ if __name__ == "__main__":
     x = (latitude, longitude)
 
     # print("CRIME RECORDS:")
-    filtered_crimes_loc = compareDistance(x, crime_responses)
+    # filtered_crimes_loc = compareDistance(x, crime_responses)
     # print("crimes: ", len(filtered_crimes_loc))
     # print(json.dumps(filtered_crimes_loc, indent=4))
 
