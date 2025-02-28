@@ -145,6 +145,8 @@ if __name__ == "__main__":
 
     # print("TRAFFIC CRASHES: ")
     traffic_crashes = getData("iecn-3sxx", "accident_date", args.year, args.month, args.day)
+    if len(traffic_crashes)==0:
+        exit
     # print("CRIME RESPONSES: ")
     crime_responses = getData("gvua-xt9q", "offense_date", args.year, args.month, args.day)
     # print("ARRESTS: ")
