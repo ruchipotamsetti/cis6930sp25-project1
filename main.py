@@ -111,8 +111,10 @@ def create_case_people_dict(traffic_crashes, data):
         if "totalpeopleinvolved" in record and record["totalpeopleinvolved"] is not None:
             total_people = record["totalpeopleinvolved"]
             case_people_dict[case_number] = int(total_people)
-        elif case_number in crash_dict:
-            case_people_dict[case_number] = int(crash_dict[case_number])
+        else:
+            case_people_dict[case_number] = 1
+        # elif case_number in crash_dict:
+        #     case_people_dict[case_number] = int(crash_dict[case_number])
         # If neither condition is met, we don't add the case_number to the dictionary
 
     # print(case_people_dict)
@@ -151,6 +153,7 @@ if __name__ == "__main__":
         sys.exit()
     # print("CRIME RESPONSES: ")
     crime_responses = getData("gvua-xt9q", "offense_date", args.year, args.month, args.day)
+    # print(json.dumps(crime_responses, indent=4))
     # print("ARRESTS: ")
     arrests = getData("aum6-79zv", "arrest_date", args.year, args.month, args.day)
 
@@ -163,6 +166,8 @@ if __name__ == "__main__":
 
     # print("CRIME RECORDS:")
     filtered_crimes_loc = compareDistance(x, crime_responses)
+    # print("crimes: ", len(filtered_crimes_loc))
+    # print(json.dumps(filtered_crimes_loc, indent=4))
 
     # print("TRAFFIC CRASHES:")
     filtered_crashes_loc = compareDistance(x, traffic_crashes)
