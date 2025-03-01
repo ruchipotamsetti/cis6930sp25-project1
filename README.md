@@ -20,7 +20,7 @@ cis6930sp25-project1/
 ├── pyproject.toml                # Configuration file for the project, used by pipenv.
 ├── Project1_demo.gif             # Demo video
 └── .github/workflows          
-    ├── pytest.yaml               # Configuration file for running tests using GitHub Actions (CI).
+    └── pytest.yaml               # Configuration file for running tests using GitHub Actions (CI).
 └── tests/                        # Directory containing all test files.
     ├── test_fetching_data.py     # Tests related to fetching data from API.
     ├── test_output_format.py     # Tests to verify tab-separated output format and order of output.
@@ -74,7 +74,7 @@ pipenv run python -m pytest -v
 ---
 
 ### **Demo**
-![]()
+![](https://github.com/ruchipotamsetti/cis6930sp25-project1/blob/main/Project1_demo.gif)
 ---
 
 ## **Features and Functions**
