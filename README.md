@@ -5,7 +5,7 @@
 ---
 
 ## **Assignment Description**
-This script fetches and processes crime records from the given API or a local file. It takes command line parameters like offset and limit to filter the number of records needed. Then from the filtered records relevant fields are extracted and are seperated by a thorn (`þ`) character before printing to STDOUT. Fields that have multiple entries are seperated by commas and the fields with null or empty entries are left blank.
+This projects aim is to find a chain of incidents that occured on the same day. So this script first fetches traffic crashes, crime responses and arrests from the api(https://data.cityofgainesville.org/), filters them according to the command line arguments provided (year, month, day). Then finds the incident in traffic crashes that has the most people involved and then computes other incident that occured within 1km of it. Finally, prints these incident's total people involved and case number separated by a tab.
 
 ---
 
@@ -22,9 +22,9 @@ cis6930sp25-project1/
 └── .github/workflows          
     ├── pytest.yaml               # Configuration file for running tests using GitHub Actions (CI).
 └── tests/                        # Directory containing all test files.
-    ├── test_fetching_data.py     # Tests related to downloading data from API.
-    ├── test_output_format.py     # Tests to verify extraction of relevant fields and filtering.
-    └── test_filtering_data.py    # Tests to verify the tab-separated output format.
+    ├── test_fetching_data.py     # Tests related to fetching data from API.
+    ├── test_output_format.py     # Tests to verify tab-separated output format and order of output.
+    └── test_filtering_data.py    # Tests to verify the x, identify incident within 1km, remove duplicates.
 ```
 
 ---
@@ -80,35 +80,44 @@ pipenv run python -m pytest -v
 ## **Features and Functions**
 
 ### **`main.py`**
-- **`getDataFromApi(url)`** :
-  - Fetches JSON data from the given API URL.
+- **`getData(api, date_key, year, month, day)`** :
+  - Fetches data from the `data.cityofgainesville.org` API using SoQL, filtering by the given date.
   - Parameters:
-    - url (str): The API endpoint to fetch data from.
-  - Returns: A list of JSON objects (crime records) if successful, otherwise an empty list.
-- **`getDataFromFile(filepath)`** :
-  - Reads incident data from a local JSON file.
+    - api (str): The dataset API identifier.
+    - date_key (str): The field name in the dataset that represents the date.
+    - year (int): The year of the records to retrieve.
+    - month (int): The month of the records to retrieve.
+    - day (int): The day of the records to retrieve.
+  - Returns: list: A list of JSON objects representing the records filtered by date.
+- **`findHighestTotalPeople(data)`** :
+  - Finds the traffic crash records with the highest number of people involved.
   - Parameters:
-     - filepath (str): The path to the JSON file.
-  - Returns: A list of JSON objects (crime records) if successful, otherwise an empty list.
-- **`formatValues(value)`** :
-  - Formats the field values as required. If a field has multiple entries it is seperated by commas. If a field has null or empty entries it is considered as blank.
+     - data (list): A list of traffic crash records (JSON objects).
+  - Returns: list: A list of JSON objects representing the crashes with the highest number of people involved.
+- **`compareDistance(x, data)`** :
+  - Filters incidents that occurred within a 1 km radius of a given location.
   - Parameters:
-     - value: The value to format (can be a string, list, or None).
-  - Returns: str: A formatted string. If the value is a list, it joins elements with commas. If the value is None, it returns an empty string.
-- **`processData(crime_records, offset, limit)`** 
-  - Loops through the received crime records applying offset and/or limit filtering, extracts relevant fields, and formats the output using a thorn separator.
+     - x (tuple): A tuple (latitude, longitude) representing the reference incident location.
+     - data (list): A list of JSON objects representing incidents.
+  - Returns: list: A list of incidents (JSON objects) that are within 1 km of the given location.
+- **`removeDuplicates(traffic_crashes, data)`** 
+  - Removes duplicate records before appending new records to the list of traffic crashes.
   - Parameters: crime_records (list):
-     - The list of crime records (JSON objects).
-     - offset (int): The number of records to skip before processing.
-     - limit (int): The number of records to return.
-  - Returns: list: A list of formatted strings, where fields are separated by the thorn (þ) character.
-
+     - traffic_crashes (list): A list of traffic crash records (JSON objects).
+     - data (list): A list of new records (JSON objects) that need to be checked for duplication. 
+  - Returns: list: A combined list of unique traffic crash records.
+- **`add_total_people_and_sort(data)`** 
+  - Ensures all records have a totalpeopleinvolved field, assigns a default value of 1 if missing, and sorts the records in descending order of totalpeopleinvolved and case_number.
+  - Parameters: crime_records (list):
+     - data (list): A list of JSON objects representing incidents.
+  - Returns: list: A sorted list of incidents with missing values handled.
 ---
 
 ## **Bugs and Assumptions**
 - If both the API url and file are provided in the command line as arguments then it would fetch data from the API.
 - The script makes the assumption that proper JSON is always returned by API responses.
 - In order to retrieve data from a URL, an active internet connection is required.
+- Since crime_responses do not have totalpeopleinvolved value, default value of 1 is assumed.
 
 ---
 
