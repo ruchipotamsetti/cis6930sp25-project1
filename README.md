@@ -1,4 +1,4 @@
-# **cis6930sp25 -- Project 1 **
+# **cis6930sp25 -- Project 1**
 
 **Name:** Ruchita Potamsetti
 
