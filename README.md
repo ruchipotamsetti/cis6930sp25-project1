@@ -5,7 +5,7 @@
 ---
 
 ## **Assignment Description**
-This projects aim is to find a chain of incidents that occured on the same day. So this script first fetches traffic crashes, crime responses and arrests from the api(https://data.cityofgainesville.org/), filters them according to the command line arguments provided (year, month, day). Then finds the incident in traffic crashes that has the most people involved and then computes other incident that occured within 1km of it. Finally, prints these incident's total people involved and case number separated by a tab.
+This projects aim is to find a chain of incidents that occured on the same day. So this script first fetches traffic crashes, crime responses and arrests from the API (https://data.cityofgainesville.org/), filters them according to the command line arguments provided (year, month, day). Then finds the incident in traffic crashes that has the most people involved and then computes other incident that occured within 1km of it. Finally, prints these incident's total people involved and case number separated by a tab.
 
 ---
 
